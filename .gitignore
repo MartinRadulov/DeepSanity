@@ -1,0 +1,17 @@
+# Binaries & build artifacts
+*.o
+*.out
+build/
+bin/
+deep_sanity
+
+# VS Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+
+# System & editor temporary files
+.DS_Store
+*.swp
+*~
