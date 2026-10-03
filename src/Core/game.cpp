@@ -1,5 +1,6 @@
 #include <iostream>
 #include "game.h"
+#include "Player/player.h"
 
 Game::Game() : isRunning(false), window(nullptr), renderer(nullptr){}
 
@@ -35,6 +36,8 @@ bool Game::init(const char* title, int width, int height){
         return false;
     }
 
+    player = std::make_unique<Player>(400, 300, 40, 40);
+
     isRunning = true;
     return true;
 }
@@ -49,12 +52,20 @@ void Game::handleEvents(){
 }
 
 void Game::update(){
-
+    if(player){
+        player->update();
+    }
 }
 
 void Game::render(){
     SDL_SetRenderDrawColor(renderer, 25, 25, 35, 255);
     SDL_RenderClear(renderer);
+
+    //Player
+    if(player){
+        player->render(renderer);
+    }
+
     SDL_RenderPresent(renderer);
 }
 
