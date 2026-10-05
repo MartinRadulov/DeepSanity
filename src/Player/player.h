@@ -1,15 +1,16 @@
 #pragma once
 #include <SDL2/SDL.h>
+#include "Math/vector.h"
 
 class Player{
 private:
-    int x;
-    int y;
+    Vector2 position;
     int width;
     int height;
+    float speed;
 
 public:
-    Player(int x, int y, int width, int height);
+    Player(int startX, int startY);
     ~Player();
 
     void update();

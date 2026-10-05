@@ -36,7 +36,9 @@ bool Game::init(const char* title, int width, int height){
         return false;
     }
 
-    player = std::make_unique<Player>(400, 300, 40, 40);
+
+    //Creating PLAYER
+    player = std::make_unique<Player>(400.0f, 300.0f);
 
     isRunning = true;
     return true;
@@ -70,6 +72,8 @@ void Game::render(){
 }
 
 void Game::clean(){
+    player.reset();
+
     if(renderer){
         SDL_DestroyRenderer(renderer);
         renderer = nullptr;
