@@ -3,6 +3,7 @@
 #include <memory>
 
 class Player;
+class Floor;
 
 class Game{
 private:
@@ -10,6 +11,7 @@ private:
     SDL_Window* window;
     SDL_Renderer* renderer;
     std::unique_ptr<Player> player;
+    std::unique_ptr<Floor> floor;
 
 public:
     Game();

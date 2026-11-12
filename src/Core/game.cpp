@@ -1,6 +1,7 @@
 #include <iostream>
 #include "game.h"
 #include "Player/player.h"
+#include "World/floor.h"
 
 Game::Game() : isRunning(false), window(nullptr), renderer(nullptr){}
 
@@ -36,6 +37,8 @@ bool Game::init(const char* title, int width, int height){
         return false;
     }
 
+    //FLOOR
+    floor = std::make_unique<Floor>();
 
     //Creating PLAYER
     player = std::make_unique<Player>(400.0f, 300.0f);
@@ -61,19 +64,20 @@ void Game::handleEvents(){
 }
 
 void Game::update(float deltaTime){
-    if(player){
-        player->update(deltaTime);
-    }
+    if(player) player->update(deltaTime);
+
+    if (floor) floor->update(deltaTime);
 }
 
 void Game::render(){
     SDL_SetRenderDrawColor(renderer, 25, 25, 35, 255);
     SDL_RenderClear(renderer);
 
+    //FLOOR
+    if (floor) floor->render(renderer);
+
     //Player
-    if(player){
-        player->render(renderer);
-    }
+    if(player) player->render(renderer);
 
     SDL_RenderPresent(renderer);
 }

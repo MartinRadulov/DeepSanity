@@ -16,6 +16,10 @@ namespace Constants {
     // constexpr float SWORD_SIZE = 24.0f;
     // constexpr float SWORD_HALF_SIZE = SWORD_SIZE / 2.0f;
     
+    constexpr int TILE_SIZE = 40;
+    constexpr int ROOM_X = 20;
+    constexpr int ROOM_Y = 15;
+    constexpr int FLOOR_SIZE = 13;
 
     constexpr float ATTACK_OFFSET = 30.0f;
 }
