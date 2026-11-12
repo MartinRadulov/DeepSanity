@@ -1,7 +1,7 @@
 #include "sword.h"
 #include "constants.h"
 
-void Sword::attack(Vector2 playerPos, float fireRate, float range){
+void Sword::attack(Vector2 playerPos, float fireRate, float range, Vector2 dir){
     if(!canAttack()) return;
 
     hitboxPos = playerPos;
@@ -9,15 +9,17 @@ void Sword::attack(Vector2 playerPos, float fireRate, float range){
     isSwinging = true;
     timer = slashDur;
     cooldownTimer = fireRate;
+    slashDir = dir;
 }
 
-void Sword::update(float deltaTime){
-    Weapon::update(deltaTime);
+void Sword::update(float deltaTime, Vector2 playerPos){
+    Weapon::update(deltaTime, playerPos);
     
     if(isSwinging){
         timer -= deltaTime;
         if(timer <= 0.0f) isSwinging = false;
     }
+    moveSlash(playerPos);
 }
 
 void Sword::render(SDL_Renderer* renderer){
@@ -33,4 +35,8 @@ void Sword::render(SDL_Renderer* renderer){
     };
         SDL_RenderFillRectF(renderer, &rect);
 
+}
+
+void Sword::moveSlash(Vector2 playerPos){
+    hitboxPos = playerPos +  (slashDir * Constants::ATTACK_OFFSET);
 }

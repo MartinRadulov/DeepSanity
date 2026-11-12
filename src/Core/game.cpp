@@ -50,6 +50,13 @@ void Game::handleEvents(){
         if(event.type == SDL_QUIT){
             isRunning = false;
         }
+        else if(event.type == SDL_KEYDOWN){
+            if(event.key.repeat == 0){
+                if(event.key.keysym.sym == SDLK_LCTRL || event.key.keysym.sym == SDLK_RCTRL){
+                    if(player) player->switchWeapon();
+                }
+            }
+        }
     }
 }
 

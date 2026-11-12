@@ -11,11 +11,13 @@ private:
     float timer = 0.0f;
     bool isSwinging = false;
     float slashSize = 0.0f;
+    Vector2 slashDir;
 public:
     Sword() = default;
     ~Sword() override = default;
 
-    void attack(Vector2 playerPos, float fireRate, float range);
+    void attack(Vector2 playerPos, float fireRate, float range, Vector2 dir);
     void render(SDL_Renderer* renderer) override;
-    void update(float deltaTime) override;
+    void update(float deltaTime, Vector2 playerPos) override;
+    void moveSlash(Vector2 playerPos);
 };

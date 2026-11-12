@@ -24,9 +24,9 @@ Player::~Player(){}
 void Player::update(float deltaTime){
     handleMovment(deltaTime);
 
-    if(currWeapon){
-        currWeapon->update(deltaTime);
-    }
+    Vector2 center(position.x + width / 2.0f, position.y + height / 2.0f);
+    if(bow) bow->update(deltaTime, center);
+    if(sword) sword->update(deltaTime, center);
 
     handleAttack();
 }
@@ -58,17 +58,8 @@ void Player::handleAttack(){
     if(dir.x != 0.0f || dir.y != 0.0f){
         Vector2 center(position.x + width / 2.0f, position.y + height / 2.0f);
         Vector2 spawnPos = center +  (dir * Constants::ATTACK_OFFSET);
-        if(bow){
-            bow->attack(spawnPos, arrowVel, fireRate, rangeB);
-        }
-    }
-
-    if(dir.x != 0.0f || dir.y != 0.0f){
-        Vector2 center(position.x + width / 2.0f, position.y + height / 2.0f);
-        Vector2 spawnPos = center +  (dir * Constants::ATTACK_OFFSET);
-        if(sword){
-            sword->attack(spawnPos, slashRate, rangeS);
-        }
+        if(currWeapon == bow.get()) bow->attack(spawnPos, arrowVel, fireRate, rangeB); //BOW
+        if(currWeapon == sword.get()) sword->attack(spawnPos, slashRate, rangeS, dir); //SWORD
     }
 }
 
@@ -77,7 +68,11 @@ void Player::render(SDL_Renderer* renderer){
     SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
     SDL_RenderFillRectF(renderer, &rect);
 
-    if(currWeapon){
-        currWeapon->render(renderer);
-    }
+    if(bow) bow->render(renderer);
+    if(sword) sword->render(renderer);
+}
+
+void Player::switchWeapon(){
+    if(currWeapon == bow.get()) currWeapon = sword.get();
+    else currWeapon = bow.get();
 }

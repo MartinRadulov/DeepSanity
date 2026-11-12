@@ -11,7 +11,7 @@ public:
 
     bool canAttack() const { return cooldownTimer <= 0; }
 
-    virtual void update(float deltaTime){
+    virtual void update(float deltaTime, Vector2 playerPos){
         if(cooldownTimer > 0.0f){
             cooldownTimer -= deltaTime;
         }

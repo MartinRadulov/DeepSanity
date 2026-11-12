@@ -30,4 +30,5 @@ public:
     void update(float deltaTime);
     void render(SDL_Renderer* renderer);
     void handleAttack();
+    void switchWeapon();
 };

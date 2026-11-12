@@ -21,7 +21,7 @@ public:
 
     void attack(Vector2 playerPos, Vector2 arrowVel, float fireRate, float range);
     void render(SDL_Renderer* renderer) override;
-    void update(float deltaTime) override;
+    void update(float deltaTime, Vector2 playerPos) override;
 
 private:
     void cleanArrows();

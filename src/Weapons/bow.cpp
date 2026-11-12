@@ -38,8 +38,8 @@ void Bow::cleanArrows(){
     arrows.resize(writeIndex);
 }
 
-void Bow::update(float deltaTime){
-    Weapon::update(deltaTime);
+void Bow::update(float deltaTime, Vector2 playerPos){
+    Weapon::update(deltaTime, playerPos);
     movmentArrows(deltaTime);
     cleanArrows();
 }
