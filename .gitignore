@@ -4,6 +4,7 @@
 build/
 bin/
 deep_sanity
+Inferno1
 
 # VS Code
 .vscode/*

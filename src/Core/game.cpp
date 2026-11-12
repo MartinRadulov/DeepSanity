@@ -53,9 +53,9 @@ void Game::handleEvents(){
     }
 }
 
-void Game::update(){
+void Game::update(float deltaTime){
     if(player){
-        player->update();
+        player->update(deltaTime);
     }
 }
 

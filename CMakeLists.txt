@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(DeepSanity VERSION 1.0 LANGUAGES CXX)
+project(Inferno1 VERSION 1.0 LANGUAGES CXX)
 
 # Use modern C++17 standard
 set(CMAKE_CXX_STANDARD 17)
@@ -15,10 +15,10 @@ file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
 )
 
 # Define the final executable program
-add_executable(DeepSanity ${SOURCES})
+add_executable(Inferno1 ${SOURCES})
 
 # Allow #include to find files relative to the src/ directory (e.g. #include "Core/game.h")
-target_include_directories(DeepSanity PRIVATE src)
+target_include_directories(Inferno1 PRIVATE src)
 
 # Link the SDL2 library to our executable
-target_link_libraries(DeepSanity PRIVATE SDL2::SDL2)
+target_link_libraries(Inferno1 PRIVATE SDL2::SDL2)

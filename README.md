@@ -1,2 +1,2 @@
-# DeepSanity
-2D Top-Down game, on a custom game engine, inspired by the board game "Deep Regrets"
+# Inferno1
+Top-Down action roguelike inspired by *The Binding of Isaac*, featuring dynamic melee/ranged combat stance switching, procedural dungeon generation, enemies, and item synergies.
