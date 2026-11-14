@@ -48,16 +48,27 @@ void Player::handleAttack(){
     Vector2 dir(0.0f, 0.0f);
     float momentum = 0.25f;
 
-    if(keystates[SDL_SCANCODE_UP])    dir.y -= 1.0f;
-    if(keystates[SDL_SCANCODE_DOWN])  dir.y += 1.0f;
-    if(keystates[SDL_SCANCODE_LEFT])  dir.x -= 1.0f;
-    if(keystates[SDL_SCANCODE_RIGHT]) dir.x += 1.0f;
+    bool upNow    = keystates[SDL_SCANCODE_UP];
+    bool downNow  = keystates[SDL_SCANCODE_DOWN];
+    bool leftNow  = keystates[SDL_SCANCODE_LEFT];
+    bool rightNow = keystates[SDL_SCANCODE_RIGHT];
 
-    Vector2 arrowVel = (dir.normalized() * shotSpeed) + (moveDir * momentum * speed);
+    // Only set direction if the key was JUST pressed this frame (tap)
+    if(upNow && !upPressedLastFrame)       dir.y -= 1.0f;
+    if(downNow && !downPressedLastFrame)   dir.y += 1.0f;
+    if(leftNow && !leftPressedLastFrame)   dir.x -= 1.0f;
+    if(rightNow && !rightPressedLastFrame) dir.x += 1.0f;
+
+    // Save states for next frame
+    upPressedLastFrame = upNow;
+    downPressedLastFrame = downNow;
+    leftPressedLastFrame = leftNow;
+    rightPressedLastFrame = rightNow;
 
     if(dir.x != 0.0f || dir.y != 0.0f){
+        Vector2 arrowVel = (dir.normalized() * shotSpeed) + (moveDir * momentum * speed);
         Vector2 center(position.x + width / 2.0f, position.y + height / 2.0f);
-        Vector2 spawnPos = center +  (dir * Constants::ATTACK_OFFSET);
+        Vector2 spawnPos = center + (dir * Constants::ATTACK_OFFSET);
         if(currWeapon == bow.get()) bow->attack(spawnPos, arrowVel, fireRate, rangeB); //BOW
         if(currWeapon == sword.get()) sword->attack(spawnPos, slashRate, rangeS, dir); //SWORD
     }
