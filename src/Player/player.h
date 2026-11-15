@@ -22,6 +22,11 @@ private:
     Weapon* currWeapon;
     Vector2 moveDir;
 
+    bool upPressedLastFrame = false;
+    bool downPressedLastFrame = false;
+    bool leftPressedLastFrame = false;
+    bool rightPressedLastFrame = false;
+
 public:
     Player(int startX, int startY);
     ~Player();

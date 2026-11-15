@@ -1,6 +1,7 @@
 #include "room.h"
 
-Room::Room(int gridX, int gridY) : gridX(gridX), gridY(gridY){
+Room::Room(int gridX, int gridY, RoomType type, RoomShape shape) :
+    gridX(gridX), gridY(gridY), type(type), shape(shape){
     initTiles();
 }
 
