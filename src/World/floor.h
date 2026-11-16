@@ -40,6 +40,7 @@ private:
     bool tryPlaceSpecialRoom(RoomType type, std::mt19937& rng);
     std::vector<std::vector<int>> calculateCellDistances() const;
     bool tryPlaceBossRoom(std::mt19937& rng);
+    bool tryPlaceSecretRoom(std::mt19937& rng);
 
 public:
     Floor();

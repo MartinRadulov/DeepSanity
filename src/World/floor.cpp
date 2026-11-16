@@ -272,6 +272,7 @@ void Floor::placeRoom(int ax, int ay, RoomShape shape, const std::vector<Dir>& t
 void Floor::placeManRooms(std::mt19937& rng){
     // 1. Boss room placed at maximum distance via BFS
     tryPlaceBossRoom(rng);
+    tryPlaceSecretRoom(rng);
 
     // 2. Shop and Treasure placed at remaining dead-ends
     tryPlaceSpecialRoom(RoomType::SHOP, rng);
@@ -353,6 +354,58 @@ bool Floor::tryPlaceBossRoom(std::mt19937& rng){
     auto [bossX, bossY] = bestSpots[pick(rng)];
 
     placeRoom(bossX, bossY, RoomShape::NORMAL_1x1, TILES_1x1, RoomType::BOSS);
+    return true;
+}
+
+bool Floor::tryPlaceSecretRoom(std::mt19937& rng){
+    int maxNeighs = 0;
+    std::vector<std::pair<int, int>> bestSpots;
+
+    for(int y = 0; y < Constants::FLOOR_SIZE; y++){
+        for(int x = 0; x < Constants::FLOOR_SIZE; x++){
+            if(grid[y][x] != nullptr) continue;
+
+            // 1. Check if this spot touches any illegal walls or Boss room
+            bool validSpot = true;
+            for(const auto& d : dirs){
+                int nx = x + d.dx;
+                int ny = y + d.dy;
+                if(isValidCoord(nx, ny) && grid[ny][nx] != nullptr){
+                    Room* neigh = grid[ny][nx];
+                    RoomShape nShape = neigh->getShape();
+
+                    // Cannot touch closed side walls of skinny rooms!
+                    if(isSkinnyH(nShape) && d.dy != 0) { validSpot = false; break; }
+                    if(isSkinnyV(nShape) && d.dx != 0) { validSpot = false; break; }
+
+                    // Cannot touch Boss room!
+                    if(neigh->getType() == RoomType::BOSS) { validSpot = false; break; }
+                }
+            }
+
+            if(!validSpot) continue;
+
+            // 2. Count neighbors and find the maximum
+            int neighs = countNeighs(x, y);
+            if(neighs > 0){
+                if(neighs > maxNeighs){
+                    maxNeighs = neighs;
+                    bestSpots.clear();
+                    bestSpots.push_back({x, y});
+                } else if(neighs == maxNeighs){
+                    bestSpots.push_back({x, y});
+                }
+            }
+        }
+    }
+
+    if(bestSpots.empty()) return false;
+
+    // Pick randomly among the spots with the most neighbors
+    std::uniform_int_distribution<size_t> pick(0, bestSpots.size() - 1);
+    auto [secretX, secretY] = bestSpots[pick(rng)];
+
+    placeRoom(secretX, secretY, RoomShape::NORMAL_1x1, TILES_1x1, RoomType::SECRET);
     return true;
 }
 
