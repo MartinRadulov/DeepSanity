@@ -1,6 +1,7 @@
 #pragma once
 #include <SDL2/SDL.h>
 #include "constants.h"
+#include <vector>
 
 enum class TileType{
     EMPTY,
@@ -33,6 +34,16 @@ enum class RoomShape{
     SKINNY_V_1x2
 };
 
+struct Dir{ int dx, dy; };
+
+class Room;
+
+struct Door{
+    int cellX, cellY;
+    Dir dir;
+    Room* nextRoom;
+};
+
 class Room{
 private:
     TileType tiles[Constants::ROOM_Y][Constants::ROOM_X];
@@ -40,6 +51,7 @@ private:
     int gridY;
     RoomType type;
     RoomShape shape;
+    std::vector<Door> doors;
 
     void initTiles();
 
@@ -60,4 +72,8 @@ public:
 
     int getX() const { return gridX; }
     int getY() const { return gridY; }
+
+    void addDoor(int cellX, int cellY, Dir d, Room* target);
+    bool hasDoor(int cellX, int cellY, Dir d) const;
+    const std::vector<Door>& getDoors() const { return doors; }
 };

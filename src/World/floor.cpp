@@ -2,6 +2,7 @@
 #include <iostream>
 #include <random>
 #include <algorithm>
+#include <queue>
 
 Floor::Floor() : currRoom(nullptr){
     for(int i = 0; i < 10; i++){
@@ -71,91 +72,135 @@ void Floor::generateFloor(){
 
         bool roomPlaced = false;
 
-        // Determine which directions this room can branch into
-        std::vector<Dir> availableDirs;
-        if(isSkinnyH(curr->getShape())){
-            availableDirs = { {-1, 0}, {1, 0} };
-        } else if(isSkinnyV(curr->getShape())){
-            availableDirs = { {0, -1}, {0, 1} };
-        } else {
-            availableDirs = dirs;
-        }
+        // diretiosn
+        std::vector<Dir> availableDirs = getAvailableDirs(curr);
 
-        // Pick a random direction
+        // Pick random direction
         std::shuffle(availableDirs.begin(), availableDirs.end(), rng);
         for(const auto& d : availableDirs){
             int nx = curr->getX() + d.dx;
             int ny = curr->getY() + d.dy;
 
-            // Chance for a special shape (1 in 2 for testing)
+            // Chance for shape
             std::uniform_int_distribution<int> specialChance(1, 2);
             if(specialChance(rng) == 1){
-                std::uniform_int_distribution<int> typeRoll(1, 2); // 1 = Big 2x2, 2 = Skinny
+                std::uniform_int_distribution<int> typeRoll(1, 3);
+                int roll = typeRoll(rng);
 
-                // --- BIG 2x2 ROOM ---
-                if(typeRoll(rng) == 1){
-                    std::vector<Dir> testCorners = TILES_2x2;
-                    std::shuffle(testCorners.begin(), testCorners.end(), rng);
-
-                    for(const auto& corner : testCorners){
-                        int ax = nx - corner.dx;
-                        int ay = ny - corner.dy;
-                        if(canFit(ax, ay, RoomShape::BIG_2x2, TILES_2x2)){
-                            placeRoom(ax, ay, RoomShape::BIG_2x2, TILES_2x2, RoomType::NORMAL);
-                            roomPlaced = true;
-                            break;
-                        }
-                    }
+                if(roll == 1){
+                    roomPlaced = tryPlaceBig2x2(nx, ny, rng);
+                } 
+                else if(roll == 2){
+                    roomPlaced = tryPlaceSkinny(nx, ny, d, rng);
                 }
-                // --- SKINNY ROOM ---
                 else{
-                    std::uniform_int_distribution<int> lengthRoll(1, 2);
-                    bool isLong = (lengthRoll(rng) == 2);
-
-                    RoomShape skinnyShape;
-                    std::vector<Dir> skinnyTiles;
-                    int ax = nx;
-                    int ay = ny;
-
-                    if(d.dx != 0){ // Horizontal (Left or Right)
-                        if(isLong){
-                            skinnyShape = RoomShape::SKINNY_H_2x1;
-                            skinnyTiles = TILES_2x1;
-                            if(d.dx == -1) ax = nx - 1; //why not - 2
-                        } 
-                        else{
-                            skinnyShape = RoomShape::SKINNY_H_1x1;
-                            skinnyTiles = TILES_1x1;
-                        }
-                    }
-                    else{ // Vertical (Up or Down)
-                        if(isLong){
-                            skinnyShape = RoomShape::SKINNY_V_1x2;
-                            skinnyTiles = TILES_1x2;
-                            if(d.dy == -1) ay = ny - 1;
-                        }
-                        else{
-                            skinnyShape = RoomShape::SKINNY_V_1x1;
-                            skinnyTiles = TILES_1x1;
-                        }
-                    }
-
-                    if(canFit(ax, ay, skinnyShape, skinnyTiles)){
-                        placeRoom(ax, ay, skinnyShape, skinnyTiles, RoomType::NORMAL);
-                        roomPlaced = true;
-                    }
+                    roomPlaced = tryPlaceL(nx, ny, rng);
                 }
             }
 
             // NORMAL 1x1 (Fallback if no special room was placed)
-            if(!roomPlaced && canFit(nx, ny, RoomShape::NORMAL_1x1, TILES_1x1)){
-                placeRoom(nx, ny, RoomShape::NORMAL_1x1, TILES_1x1, RoomType::NORMAL);
-                roomPlaced = true;
+            if(!roomPlaced){
+                roomPlaced = tryPlaceNormal(nx, ny);
             }
 
             if(roomPlaced) break;
         }
     }
+
+    placeManRooms(rng);
+    placeMaybeRooms(rng);
+}
+
+std::vector<Dir> Floor::getAvailableDirs(const Room* room) const{
+    if(isSkinnyH(room->getShape())){
+        return { {-1, 0}, {1, 0} };
+    }
+    else if(isSkinnyV(room->getShape())){
+        return { {0, -1}, {0, 1} };
+    }
+    return dirs;
+}
+
+bool Floor::tryPlaceBig2x2(int nx, int ny, std::mt19937& rng){
+    std::vector<Dir> testCorners = TILES_2x2;
+    std::shuffle(testCorners.begin(), testCorners.end(), rng);
+
+    for(const auto& corner : testCorners){
+        int ax = nx - corner.dx;
+        int ay = ny - corner.dy;
+        if(canFit(ax, ay, RoomShape::BIG_2x2, TILES_2x2)){
+            placeRoom(ax, ay, RoomShape::BIG_2x2, TILES_2x2, RoomType::NORMAL);
+            return true;
+        }
+    }
+    return false;
+}
+
+bool Floor::tryPlaceL(int nx, int ny, std::mt19937& rng){
+    std::vector<std::vector<Dir>> orient = L_ORIENTATIONS;
+    std::shuffle(orient.begin(), orient.end(), rng);
+
+    for(const auto& shapeTiles : orient){
+        std::vector<Dir> testTiles = shapeTiles;
+        std::shuffle(testTiles.begin(), testTiles.end(), rng);
+
+        for(const auto& t : testTiles){
+            int ax = nx - t.dx;
+            int ay = ny - t.dy;
+            if(canFit(ax, ay, RoomShape::L_SHAPE, shapeTiles)){
+                placeRoom(ax, ay, RoomShape::L_SHAPE, shapeTiles, RoomType::NORMAL);
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+bool Floor::tryPlaceSkinny(int nx, int ny, const Dir& d, std::mt19937& rng){
+    std::uniform_int_distribution<int> lengthRoll(1, 2);
+    bool isLong = (lengthRoll(rng) == 2);
+
+    RoomShape skinnyShape;
+    std::vector<Dir> skinnyTiles;
+    int ax = nx;
+    int ay = ny;
+
+    if(d.dx != 0){ // Horizontal (Left or Right)
+        if(isLong){
+            skinnyShape = RoomShape::SKINNY_H_2x1;
+            skinnyTiles = TILES_2x1;
+            if(d.dx == -1) ax = nx - 1;
+        } 
+        else{
+            skinnyShape = RoomShape::SKINNY_H_1x1;
+            skinnyTiles = TILES_1x1;
+        }
+    }
+    else{ // Vertical (Up or Down)
+        if(isLong){
+            skinnyShape = RoomShape::SKINNY_V_1x2;
+            skinnyTiles = TILES_1x2;
+            if(d.dy == -1) ay = ny - 1;
+        }
+        else{
+            skinnyShape = RoomShape::SKINNY_V_1x1;
+            skinnyTiles = TILES_1x1;
+        }
+    }
+
+    if(canFit(ax, ay, skinnyShape, skinnyTiles)){
+        placeRoom(ax, ay, skinnyShape, skinnyTiles, RoomType::NORMAL);
+        return true;
+    }
+    return false;
+}
+
+bool Floor::tryPlaceNormal(int nx, int ny){
+    if(canFit(nx, ny, RoomShape::NORMAL_1x1, TILES_1x1)){
+        placeRoom(nx, ny, RoomShape::NORMAL_1x1, TILES_1x1, RoomType::NORMAL);
+        return true;
+    }
+    return false;
 }
 
 bool Floor::isSkinnyH(RoomShape shape){
@@ -177,7 +222,6 @@ bool Floor::canFit(int ax, int ay, RoomShape shape, const std::vector<Dir>& tile
     for(const auto& t : tiles){
         int tx = ax + t.dx;
         int ty = ay + t.dy;
-
         for(const auto& d : dirs){
             int nx = tx + d.dx;
             int ny = ty + d.dy;
@@ -186,16 +230,10 @@ bool Floor::canFit(int ax, int ay, RoomShape shape, const std::vector<Dir>& tile
                 Room* neighbor = grid[ny][nx];
                 RoomShape neighShape = neighbor->getShape();
 
-                // If NEW room is horizontal skinny -> cannot have neighbors above/below!
                 if(isSkinnyH(shape) && d.dy != 0) return false;
-
-                // If NEW room is vertical skinny -> cannot have neighbors left/right!
                 if(isSkinnyV(shape) && d.dx != 0) return false;
 
-                // If NEIGHBOR is horizontal skinny -> cannot touch its top/bottom wall!
                 if(isSkinnyH(neighShape) && d.dy != 0) return false;
-
-                // If NEIGHBOR is vertical skinny -> cannot touch its side wall!
                 if(isSkinnyV(neighShape) && d.dx != 0) return false;
             }
         }
@@ -213,6 +251,151 @@ void Floor::placeRoom(int ax, int ay, RoomShape shape, const std::vector<Dir>& t
     for(const auto& t : tiles){
         grid[ay + t.dy][ax + t.dx] = ptr;
     }
+
+    for(const auto& t : tiles){
+        int cx = ax + t.dx;
+        int cy = ay + t.dy;
+        for(const auto& d : dirs){
+            int nx = cx + d.dx;
+            int ny = cy + d.dy;
+            if(isValidCoord(nx, ny) && grid[ny][nx] != nullptr){
+                Room* neigh = grid[ny][nx];
+                if(neigh != ptr){
+                    ptr->addDoor(cx, cy, d, neigh);
+                    neigh->addDoor(nx, ny, {-d.dx, -d.dy}, ptr);
+                }
+            }
+        }
+    }
+}
+
+void Floor::placeManRooms(std::mt19937& rng){
+    // 1. Boss room placed at maximum distance via BFS
+    tryPlaceBossRoom(rng);
+
+    // 2. Shop and Treasure placed at remaining dead-ends
+    tryPlaceSpecialRoom(RoomType::SHOP, rng);
+    tryPlaceSpecialRoom(RoomType::TREASURE, rng);
+}
+
+std::vector<std::vector<int>> Floor::calculateCellDistances() const{
+    int startX = Constants::FLOOR_SIZE / 2;
+    int startY = Constants::FLOOR_SIZE / 2;
+
+    std::vector<std::vector<int>> dist(
+        Constants::FLOOR_SIZE,
+        std::vector<int>(Constants::FLOOR_SIZE, -1)
+    );
+
+    std::queue<std::pair<int, int>> q;
+    dist[startY][startX] = 0;
+    q.push({startX, startY});
+
+    while(!q.empty()){
+        auto [cx, cy] = q.front();
+        q.pop();
+
+        Room* curr = grid[cy][cx];
+
+        for(const auto& d : dirs){
+            int nx = cx + d.dx;
+            int ny = cy + d.dy;
+
+            if(!isValidCoord(nx, ny) || grid[ny][nx] == nullptr) continue;
+            if(dist[ny][nx] != -1) continue;
+
+            // Inside same room, or connected by a door!
+            bool canMove = (grid[ny][nx] == curr) || curr->hasDoor(cx, cy, d);
+
+            if(canMove){
+                dist[ny][nx] = dist[cy][cx] + 1;
+                q.push({nx, ny});
+            }
+        }
+    }
+
+    return dist;
+}
+
+bool Floor::tryPlaceBossRoom(std::mt19937& rng){
+    auto dist = calculateCellDistances();
+
+    int maxDist = -1;
+    std::vector<std::pair<int, int>> bestSpots;
+
+    for(int y = 0; y < Constants::FLOOR_SIZE; y++){
+        for(int x = 0; x < Constants::FLOOR_SIZE; x++){
+            if(grid[y][x] == nullptr || grid[y][x]->getType() != RoomType::NORMAL) continue;
+            if(dist[y][x] == -1) continue;
+
+            for(const auto& d : dirs){
+                int bx = x + d.dx;
+                int by = y + d.dy;
+
+                if(canFit(bx, by, RoomShape::NORMAL_1x1, TILES_1x1)){
+                    int stepDist = dist[y][x] + 1;
+
+                    if(stepDist > maxDist){
+                        maxDist = stepDist;
+                        bestSpots.clear();
+                        bestSpots.push_back({bx, by});
+                    } else if(stepDist == maxDist){
+                        bestSpots.push_back({bx, by});
+                    }
+                }
+            }
+        }
+    }
+
+    if(bestSpots.empty()) return false;
+
+    std::uniform_int_distribution<size_t> pick(0, bestSpots.size() - 1);
+    auto [bossX, bossY] = bestSpots[pick(rng)];
+
+    placeRoom(bossX, bossY, RoomShape::NORMAL_1x1, TILES_1x1, RoomType::BOSS);
+    return true;
+}
+
+void Floor::placeMaybeRooms(std::mt19937& rng){
+    std::vector<RoomType> maybe = {
+        RoomType::CURSE,
+        RoomType::LIBRARY,
+        RoomType::SACRIFICE
+    };
+
+    std::uniform_int_distribution<int> roll(1, 100);
+
+    for(RoomType type : maybe){
+        int chance = 0;
+        if(type == RoomType::CURSE) chance = 50;       // 50% chance
+        else if(type == RoomType::LIBRARY) chance = 25; // 25% chance
+        else if(type == RoomType::SACRIFICE) chance = 30; // 30% chance
+
+        if(roll(rng) <= chance){
+            tryPlaceSpecialRoom(type, rng);
+        }
+    }
+}
+
+bool Floor::tryPlaceSpecialRoom(RoomType type, std::mt19937& rng){
+    int attempts = 0;
+    std::uniform_int_distribution<size_t> roomDist(0, rooms.size() - 1);
+    while(attempts++ < 100){
+        Room* curr = rooms[roomDist(rng)].get();
+        if(curr->getType() != RoomType::NORMAL) continue;
+
+        std::vector<Dir> avDirs = getAvailableDirs(curr);
+        std::shuffle(avDirs.begin(), avDirs.end(), rng);
+        for(const auto& d : avDirs){
+            int nx = curr->getX() + d.dx;
+            int ny = curr->getY() + d.dy;
+            if(canFit(nx, ny, RoomShape::NORMAL_1x1, TILES_1x1)){
+                placeRoom(nx, ny, RoomShape::NORMAL_1x1, TILES_1x1, type);
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 void Floor::printFloor() const {
@@ -227,6 +410,8 @@ void Floor::printFloor() const {
                         case RoomType::NORMAL:
                             if (grid[y][x]->getShape() == RoomShape::BIG_2x2) {
                                 std::cout << "2 ";
+                            } else if (grid[y][x]->getShape() == RoomShape::L_SHAPE) {
+                                std::cout << "L ";
                             } else if (isSkinnyH(grid[y][x]->getShape())) {
                                 std::cout << "= ";
                             } else if (isSkinnyV(grid[y][x]->getShape())) {
