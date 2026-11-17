@@ -109,6 +109,7 @@ void Floor::generateFloor(){
 
     placeManRooms(rng);
     placeMaybeRooms(rng);
+    tryPlaceSecretRoom(rng);
 }
 
 std::vector<Dir> Floor::getAvailableDirs(const Room* room) const{
@@ -272,7 +273,6 @@ void Floor::placeRoom(int ax, int ay, RoomShape shape, const std::vector<Dir>& t
 void Floor::placeManRooms(std::mt19937& rng){
     // 1. Boss room placed at maximum distance via BFS
     tryPlaceBossRoom(rng);
-    tryPlaceSecretRoom(rng);
 
     // 2. Shop and Treasure placed at remaining dead-ends
     tryPlaceSpecialRoom(RoomType::SHOP, rng);
@@ -443,6 +443,19 @@ bool Floor::tryPlaceSpecialRoom(RoomType type, std::mt19937& rng){
             int nx = curr->getX() + d.dx;
             int ny = curr->getY() + d.dy;
             if(canFit(nx, ny, RoomShape::NORMAL_1x1, TILES_1x1)){
+                bool touchesBoss = false;
+                for(const auto& checkDir : dirs){
+                    int adjX = nx + checkDir.dx;
+                    int adjY = ny + checkDir.dy;
+                    if(isValidCoord(adjX, adjY) && grid[adjY][adjX] != nullptr){
+                        if(grid[adjY][adjX]->getType() == RoomType::BOSS){
+                            touchesBoss = true;
+                            break;
+                        }
+                    }
+                }
+                if(touchesBoss) continue;
+
                 placeRoom(nx, ny, RoomShape::NORMAL_1x1, TILES_1x1, type);
                 return true;
             }
